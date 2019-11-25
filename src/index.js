@@ -3,6 +3,7 @@ const http = require('http'),
   authorize = require('./authorize');
 
 let proxy = httpProxy.createProxyServer({});
+let target = 'http://localhost:5001';
 
 let server = http.createServer(function (req, res) {
   if (req.method === 'OPTIONS') {
@@ -20,10 +21,10 @@ let server = http.createServer(function (req, res) {
 
     authorize.checkAuthorize(token).then(ok => {
       if (ok) {
-        proxy.web(req, res, { target: 'http://localhost:5001' });
+        proxy.web(req, res, { target: target });
       }
     }).catch(e => {
-      res.writeHead(422);
+      res.writeHead(401);
       res.end();
     })
   }
