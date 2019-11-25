@@ -3,7 +3,7 @@ const http = require('http'),
   authorize = require('./authorize');
 
 let proxy = httpProxy.createProxyServer({});
-let target = 'http://localhost:5001';
+let target = process.env.IPFS_HOST;
 
 let server = http.createServer(function (req, res) {
   if (req.method === 'OPTIONS') {

@@ -1,7 +1,9 @@
 const { IceteaWeb3 } = require('@iceteachain/web3')
-const tweb3 = new IceteaWeb3('https://rpc.icetea.io')
+const rpc = process.env.ICETEA_RPC || 'https://rpc.icetea.io'
+const tweb3 = new IceteaWeb3(rpc)
 
 // Change the contract after each deployed
+// const contractAddress = process.env.PROXY_CONTRACT
 const contractAddress = 'teat1dpgwlr06ve6njgwlczxvf877mr7gq3lrmj5fqh'
 const contract = tweb3.contract(contractAddress)
 
