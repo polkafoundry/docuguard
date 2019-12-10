@@ -1,5 +1,6 @@
 require("dotenv").config();
 const Hash = require("ipfs-only-hash");
+const fs = require("fs");
 const http = require("http"),
   formidable = require("formidable"),
   httpProxy = require("http-proxy"),
@@ -29,12 +30,17 @@ proxy.on("proxyReq", function(proxyReq, req, res, options) {
     console.log("keys", keys);
     Object.keys(files).forEach(function(key) {
       const file = files[key];
-      // console.log(file);
-      //  var fileBuffer = Buffer.from(file);
-      // console.log(fileBuffer);
     });
-    // const data = await readFileAsync(files["file-3"]);
-    console.log("data", files["file-0"]);
+
+    fs.readFile(files["file-0"].path, async (err, data) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log("data", data);
+      const hash = await Hash.of(data);
+      console.log("hash", hash);
+    });
   });
 
   let body = [];
