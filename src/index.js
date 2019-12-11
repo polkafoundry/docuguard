@@ -1,6 +1,9 @@
 require("dotenv").config();
-const Hash = require("ipfs-only-hash");
 const fs = require("fs");
+const { promisify } = require("util");
+const readFileAsync = promisify(fs.readFile);
+const { ecc, codec, AccountType } = require("@iceteachain/common");
+const Hash = require("ipfs-only-hash");
 const http = require("http"),
   formidable = require("formidable"),
   httpProxy = require("http-proxy"),
@@ -10,75 +13,78 @@ let proxy = httpProxy.createProxyServer({});
 let target = process.env.IPFS_HOST;
 console.log("target", target);
 
-function readFileAsync(file) {
+// function someAsyncFunc() {
+//   return new Promise(resolve => {
+//     resolve({ data: 1 });
+//   });
+// }
+function formidablePromise(req) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result);
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
+    var form = new formidable.IncomingForm();
+    form.parse(req, (err, fields, files) => {
+      if (err) return reject(err);
+      resolve({ fields: fields, files: files });
+    });
   });
 }
 
-proxy.on("proxyReq", function(proxyReq, req, res, options) {
-  proxyReq.setHeader("X-Special-Proxy-Header", "foobar");
-
-  var form = new formidable.IncomingForm();
-  form.parse(req, async function(err, fields, files) {
-    const keys = Object.keys(files);
-    console.log("keys", keys);
-    Object.keys(files).forEach(function(key) {
-      const file = files[key];
-    });
-
-    fs.readFile(files["file-0"].path, async (err, data) => {
-      if (err) {
-        console.error(err);
-        return;
+proxy.on("proxyReq", async (proxiedReq, req, res, options) => {
+  try {
+    proxiedReq.on("socket", function(socket) {
+      if (server) {
+        server.emit("proxyReq", proxyReq, req, res, options);
       }
+    });
+    proxiedReq.proxyWait = new Promise(function(resolve) {
+      setTimeout(() => resolve("done!"), 5000);
+    });
+
+    (proxiedReq.proxyWait || Promise.resolve()).then(data => {
       console.log("data", data);
-      const hash = await Hash.of(data);
-      console.log("hash", hash);
-    });
-  });
-
-  let body = [];
-  req
-    .on("data", chunk => {
-      // console.log("chunk", chunk.length);
-      body.push(chunk);
-    })
-    .on("end", async () => {
-      let buffer = Buffer.from(body[0]);
-      const hash = await Hash.of(buffer);
-      // console.log("hash", hash);
-
-      // res.end(body);
-      let token = req.headers.authorization.slice(7);
-      // console.log("token1", token);
-      // console.log("token2", JSON.parse(token));
-      // console.log("token3", JSON.parse(token).sign);
-      // console.log("req.headers", req.headers);
-      //  res.writeHead(401);
-      // authorize
-      //   .checkAuthorize(token)
-      //   .then(ok => {
-      //     // console.log('req',body)
-      //     res.writeHead(401);
-      //   })
-      //   .catch(e => {
-      //     res.writeHead(401);
-      //     res.end();
-      //   });
+      proxiedReq.setHeader("origin", "");
+      proxiedReq.setHeader("host", "");
     });
 
-  req.on("error", function proxyRequestError() {
-    console.log("request on error");
-  });
+    // const data = await formidablePromise(req);
+    // console.log("data", data);
+    // let promise = new Promise((resolve, reject) => {});
+    // const aaaaa = await promise;
+
+    console.log("done");
+    let token = req.headers.authorization.slice(7); // get token from 'Bearer {token}'
+    token = JSON.parse(token);
+    Object.keys(token.signs).forEach(ipfsHash => {
+      const timeServer = Date.now();
+      const item = token.signs[ipfsHash];
+      const { sign, time } = item;
+      const isLess30Second = Math.floor(timeServer - time) / 1000 < 30;
+      const hash32bytes = ecc.stableHashObject(ipfsHash + time);
+      const isSigned = ecc.verify(hash32bytes, sign, token.pubkey);
+      console.log("isSigned", isSigned, "- isLess30Second: ", isLess30Second);
+    });
+  } catch (error) {
+    console.log("error", error);
+    res.statusCode = 404;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("Cannot " + req.method + " " + req.url);
+  }
+
+  // const isSign = ecc.verify(token.);
+  // proxiedReq.setHeader("X-Special-Proxy-Header", "foobar");
+
+  // const data = await formidablePromise(req);
+  // Update header
+  // proxiedReq.setHeader("content-type", "text/plain");
+  // proxiedReq.setHeader("content-length", 0);
+  // proxiedReq.setHeader("origin", "");
+  // proxiedReq.setHeader("host", "");
+  // Write out body changes to the proxyReq stream
+  // proxiedReq.write("");
+  console.log("aaaa");
 });
 
-let server = http.createServer(function(req, res) {
+let server = http.createServer();
+server.on("request", async (req, res) => {
   if (req.method === "OPTIONS") {
     res.setHeader("access-control-allow-origin", "*");
     res.setHeader("access-control-allow-credentials", "true");
@@ -90,16 +96,12 @@ let server = http.createServer(function(req, res) {
     res.writeHead(204);
     res.end();
   } else {
-    let token = req.headers.authorization.slice(7); // get token from 'Bearer {token}'
-    console.log("req.headers", req.headers);
-    // authorize.checkAuthorize(token).then(ok => {
-    // if (ok) {
+    // const data = await formidablePromise(newObj);
+    // const data = await someAsyncFunc();
+
     proxy.web(req, res, { target: target });
-    // }
-    // }).catch(e => {
-    // res.writeHead(401);
-    // res.end();
-    // })
+    console.log("end");
+    // res.end(JSON.stringify(data));
   }
 });
 
