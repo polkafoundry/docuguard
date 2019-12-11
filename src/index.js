@@ -7,10 +7,6 @@ const http = require("http"),
   formidable = require("formidable"),
   { PassThrough } = require("stream");
 
-const isAuthorized = (body, headers) => {
-  return true;
-};
-
 const httpServer = http.createServer();
 httpServer.on("request", async (req, res) => {
   if (req.method === "OPTIONS") {
