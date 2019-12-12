@@ -58,11 +58,11 @@ httpServer.on("request", async (req, res) => {
       let token = req.headers.authorization.slice(7); // get token from 'Bearer {token}'
       const { from, sign, time, pubkeySigner } = JSON.parse(token);
 
-      // const address = ecc.toAddress(from);
+      const tokenAddress = ecc.toAddress(pubkeySigner);
       let isAuthen = false;
       try {
         console.log("from", from);
-        isAuthen = await authorize.checkAuthorize(from);
+        isAuthen = await authorize.checkAuthorize(from, tokenAddress);
         console.log("isAuthen", isAuthen);
         if (!isAuthen) {
           res.writeHead(401); // unauthorized
@@ -70,6 +70,7 @@ httpServer.on("request", async (req, res) => {
           return;
         }
       } catch (e) {
+        console.console.error(e);
         res.writeHead(401); // unauthorized
         res.end();
         return;
@@ -121,4 +122,6 @@ httpServer.on("request", async (req, res) => {
   }
 });
 
-httpServer.listen(5050);
+httpServer.listen(process.env.PORT, () => {
+  console.log("listen on " + process.env.PORT);
+});
