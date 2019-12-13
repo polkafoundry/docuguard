@@ -75,7 +75,7 @@ const handleAddFiles =
   
         // finally, check if user is approved
         const tokenAddress = ecc.toAddress(pubkeySigner);
-        const isApprovedUser = true //await isAuthorized(from, tokenAddress);
+        const isApprovedUser = await isAuthorized(from, tokenAddress);
         if (!isApprovedUser) {
           return endWithCode(res, 401, 'Not an approved account or out of quota.') // unauthorized
         }
