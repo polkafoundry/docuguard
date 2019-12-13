@@ -2,12 +2,13 @@
   "name": "ipfs_proxy",
   "version": "1.0.0",
   "description": "",
-  "author": "",
-  "license": "ISC",
+  "author": "TradaTech <https://trada.tech>",
+  "license": "MIT",
   "dependencies": {
     "@iceteachain/web3": "^0.1.16",
     "dotenv": "^8.2.0",
     "formidable": "^1.2.1",
-    "ipfs-only-hash": "^1.0.2"
+    "ipfs-only-hash": "^1.0.2",
+    "memorystream": "^0.3.1"
   }
 }

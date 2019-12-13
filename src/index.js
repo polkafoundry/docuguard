@@ -1,99 +1,86 @@
 require("dotenv").config();
 const { ecc } = require("@iceteachain/common");
 const Hash = require("ipfs-only-hash");
-const fs = require("fs");
 const http = require("http"),
-  authorize = require("./authorize"),
+  { isAuthorized } = require("./authorize"),
   formidable = require("formidable"),
-  { PassThrough } = require("stream");
+  MemoryStream = require('memorystream'),
+  { handleOptions, endWithCode } = require('./util')
 
-const httpServer = http.createServer();
-httpServer.on("request", async (req, res) => {
-  if (req.method === "OPTIONS") {
-    res.setHeader("access-control-allow-origin", "*");
-    res.setHeader("access-control-allow-credentials", "true");
-    res.setHeader("access-control-allow-methods", "GET, POST, PUT, OPTIONS");
-    res.setHeader("access-control-allow-headers", "Authorization");
-    res.setHeader("access-control-max-age", 86400);
-    res.setHeader("Content-Type", "text/plain charset=UTF-8");
-    res.setHeader("Content-Type", 0);
-    res.writeHead(204); // no content
-    res.end();
-  } else {
-    const length = Number(req.headers["content-length"]);
-    if (!length) {
-      // it is an invalid request
-      res.writeHead(400); // bad request
-      res.end();
-      return;
-    }
+const EXPIRED_DURATION = +process.env.EXPIRE
 
-    const memStream = new PassThrough();
-    req.pipe(memStream);
-
-    const form = new formidable.IncomingForm();
-    const formData = [];
-    form.onPart = part => {
-      let buf = Buffer.alloc(length);
-      let startIndex = 0;
-
-      part.on("data", chunk => {
-        chunk.copy(buf, startIndex);
-        startIndex += chunk.length;
-      });
-      part.on("end", () => {
-        formData.push(buf.slice(0, startIndex));
-        buf = Buffer.alloc(length);
-        startIndex = 0;
-      });
-    };
-
-    form.parse(req, async err => {
-      if (err) {
-        res.writeHead(400); // bad request
-        res.end();
-        return;
+const handleAddFiles = 
+  async (req, res) => {
+    if (req.method === "OPTIONS") {
+      return handleOptions(res)
+    } else if (req.method !== 'POST' || !req.url.startsWith('/api/v0/add')) {
+      return endWithCode(400)
+    } else {
+      const length = Number(req.headers["content-length"])
+      if (!length) {
+        // it is an invalid request
+        return endWithCode(res, 400, 'Body content is empty.') // bad request
       }
-
-      let token = req.headers.authorization.slice(7); // get token from 'Bearer {token}'
-      const { from, sign, time, pubkeySigner } = JSON.parse(token);
-
-      const tokenAddress = ecc.toAddress(pubkeySigner);
-      let isAuthen = false;
-      try {
-        console.log("from", from);
-        isAuthen = await authorize.checkAuthorize(from, tokenAddress);
-        console.log("isAuthen", isAuthen);
-        if (!isAuthen) {
-          res.writeHead(401); // unauthorized
-          res.end();
-          return;
+  
+      const memStream = new MemoryStream(undefined, { maxbufsize: length });
+      req.pipe(memStream);
+  
+      const form = new formidable.IncomingForm();
+      const formData = [];
+      form.onPart = part => {
+        let buf = Buffer.alloc(length);
+        let startIndex = 0;
+  
+        part.on("data", chunk => {
+          chunk.copy(buf, startIndex);
+          startIndex += chunk.length;
+        });
+        part.on("end", () => {
+          formData.push(buf.slice(0, startIndex));
+          buf = Buffer.alloc(length);
+          startIndex = 0;
+        });
+        part.on('error', console.error)
+        part.on('aborted', console.error)
+      };
+  
+      form.parse(req, async err => {
+        if (err) {
+          console.error(err)
+          return endWithCode(res, 400, 'Error parsing form data.') // bad request
         }
-      } catch (e) {
-        console.console.error(e);
-        res.writeHead(401); // unauthorized
-        res.end();
-        return;
-      }
-
-      let preHash = [];
-      formData.forEach(buffer => {
-        // console.log("buffer", buffer);
-        preHash.push(Hash.of(buffer));
-      });
-      preHash = await Promise.all(preHash);
-      // console.log("preHash", preHash);
-      let concatHash = "";
-      preHash.forEach(hash => {
-        concatHash = concatHash.concat(hash);
-      });
-      const timeServer = Date.now();
-      const isLess60Second = Math.floor(timeServer - time) / 1000 < 60;
-      const hash32bytes = ecc.stableHashObject(concatHash + time);
-      const isSigned = ecc.verify(hash32bytes, sign, pubkeySigner);
-      console.log("isSigned", isSigned, "- isLess60Second: ", isLess60Second);
-
-      if (isLess60Second && isSigned) {
+  
+        let token = req.headers.authorization.slice(7); // get token from 'Bearer {token}'
+        const { from, sign, time, pubkeySigner } = JSON.parse(token);
+  
+        // first, check if require is not expired
+        if (Date.now() - time > EXPIRED_DURATION) {
+          return endWithCode(res, 401, 'The request is no longer valid.')
+        }
+  
+        // then, check signature
+        const promises = formData.reduce((hashes, buf) => {
+          hashes.push(Hash.of(buf))
+          return hashes
+        }, [])
+        const fileHashes = await Promise.all(promises)
+        const reqData = { from, time, fileHashes }
+  
+        const hash32bytes = ecc.stableHashObject(reqData, null);
+        const validSignature = ecc.verify(hash32bytes, sign, pubkeySigner);
+        if (!validSignature) {
+          console.log('Invalid signature for ' + from, reqData, hash32bytes, pubkeySigner)
+          return endWithCode(res, 400, 'Invalid signature.') // bad request
+        }
+  
+        // finally, check if user is approved
+        const tokenAddress = ecc.toAddress(pubkeySigner);
+        const isApprovedUser = true //await isAuthorized(from, tokenAddress);
+        if (!isApprovedUser) {
+          return endWithCode(res, 401, 'Not an approved account or out of quota.') // unauthorized
+        }
+  
+        // everything seems fine, let's proxy the request to IPFS server
         const proxyReq = http.request(
           process.env.IPFS_HOST + req.url,
           {
@@ -101,27 +88,35 @@ httpServer.on("request", async (req, res) => {
             headers: { ...req.headers, "content-length": length }
           },
           ipfsRes => {
-            console.log("Got response from IPFS");
+            // clone headers
             Object.keys(ipfsRes.headers).forEach(key => {
               const value = ipfsRes.headers[key];
               res.setHeader(key, value);
             });
-            res.writeHead(ipfsRes.statusCode); // no content
+  
+            // clone status code
+            res.writeHead(ipfsRes.statusCode);
+  
+            // pipe content
             ipfsRes.pipe(res, { end: true });
           }
         );
-        //proxyReq.write(body)
+  
+        // write orgininal body to proxyReq
         memStream.pipe(proxyReq, { end: true });
-        //proxyReq.end()
-      } else {
-        res.writeHead(401); // unauthorized
-        res.end();
-        return;
-      }
-    });
+  
+      });
+     }
   }
+
+const httpServer = http.createServer();
+httpServer.on("request", (req, res) => {
+  handleAddFiles(req, res).catch(e => {
+    console.error(e)
+    endWithCode(res, 500)
+  })
 });
 
 httpServer.listen(process.env.PORT, () => {
-  console.log("listen on " + process.env.PORT);
+  console.log("IPFS proxy is listening on " + process.env.PORT);
 });
