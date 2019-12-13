@@ -4,6 +4,10 @@
   "description": "",
   "author": "TradaTech <https://trada.tech>",
   "license": "MIT",
+  "scripts": {
+    "start": "node src/index.js",
+    "ipfs": "node fake-ipfs/index.js"
+  },
   "dependencies": {
     "@iceteachain/web3": "^0.1.16",
     "dotenv": "^8.2.0",
