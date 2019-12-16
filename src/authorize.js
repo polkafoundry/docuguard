@@ -7,7 +7,7 @@ const contract = tweb3.contract(process.env.LOVELOCK_CONTRACT);
 
 module.exports = {
   isAuthorized: function(mainAddress, tokenAddress) {
-      contract.methods
+      return contract.methods
         .isAuthorized(mainAddress, tokenAddress, process.env.LOVELOCK_CONTRACT)
         .call()
   }
