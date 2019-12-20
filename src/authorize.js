@@ -8,7 +8,7 @@ const contract = tweb3.contract(ct);
 module.exports = {
   isAuthorized: async function(mainAddress, tokenAddress) {
     if (ct.includes('.')) {
-      ct = await tweb3.contract('system.alias').resolve(ct).call()
+      ct = await tweb3.contract('system.alias').methods.resolve(ct).call()
     }
     return contract.methods
       .isAuthorized(mainAddress, tokenAddress, ct)
