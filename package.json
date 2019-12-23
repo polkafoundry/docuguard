@@ -17,8 +17,8 @@
     "memorystream": "^0.3.1"
   },
   "bin": {
-    "ipfsfake": "node fake-ipfs/index.js",
-    "ipfsproxy": "node src/index.js",
-    "ipfslocal": "node src/index.js & node fake-ipfs/index.js"
+    "ipfsfake": "fake-ipfs/index.js",
+    "ipfsproxy": "src/index.js",
+    "ipfslocal": "bin/index.js"
   }
 }
