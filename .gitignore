@@ -8,5 +8,5 @@ yarn-error.log*
 # Dependency directories
 node_modules/
 
-fake-ipfs/files
-.env
+fake-ipfs/files/Qm*
+fake-ipfs/files/upload*
