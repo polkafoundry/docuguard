@@ -123,5 +123,5 @@ httpServer.on("request", (req, res) => {
 });
 
 httpServer.listen(process.env.PORT, () => {
-  console.log("IPFS proxy is listening on " + process.env.PORT);
+  console.log("IPFS Proxy is listening on port " + process.env.PORT);
 });

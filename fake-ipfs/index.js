@@ -11,7 +11,7 @@ const { endWithCode } = require('../src/util')
 const tempHttpServer = http.createServer()
 tempHttpServer.on("request", async (req, res) => {
 
-    console.log('IPFS server got a new request', req.method, req.url)
+    // console.log('IPFS server got a new request', req.method, req.url)
 
     if (req.method === 'GET') {
         // get the hash
@@ -86,4 +86,4 @@ tempHttpServer.on("request", async (req, res) => {
 })
 
 tempHttpServer.listen(5001)
-console.log('Fake IPFS server is listening at port 5001!')
+console.log('Fake IPFS server is listening at port 5001')
