@@ -50,8 +50,8 @@ const handleAddFiles =
           return endWithCode(res, 400, 'Error parsing form data.') // bad request
         }
 
-        let token = req.headers.authorization.slice(7); // get token from 'Bearer {token}'
-        const { from, sign, time, pubkeySigner } = JSON.parse(token);
+        const authData = req.headers.authorization.slice(7); // get authData from 'Bearer {authData}'
+        const { app, from, pubkey, sign, time } = JSON.parse(authData);
 
         // first, check if require is not expired
         if (Date.now() - time > EXPIRED_DURATION) {
@@ -64,19 +64,19 @@ const handleAddFiles =
           return hashes
         }, [])
         const fileHashes = await Promise.all(promises)
-        const reqData = { from, time, fileHashes }
+        const reqData = { app, fileHashes, from, time }
 
         const hash32bytes = ecc.stableHashObject(reqData, null);
-        const validSignature = ecc.verify(hash32bytes, sign, pubkeySigner);
+        const validSignature = ecc.verify(hash32bytes, sign, pubkey);
         if (!validSignature) {
-          console.log('Invalid signature for ' + from, reqData, hash32bytes, pubkeySigner)
+          console.log('Invalid signature for ' + from, reqData, hash32bytes, pubkey)
           return endWithCode(res, 400, 'Invalid signature.') // bad request
         }
 
         // finally, check if user is approved
-        const tokenAddress = ecc.toAddress(pubkeySigner);
+        const tokenAddress = ecc.toAddress(pubkey);
         try {
-          const isApprovedUser = await isAuthorized(from, tokenAddress);
+          const isApprovedUser = await isAuthorized(app, from, tokenAddress);
           if (!isApprovedUser) {
             return endWithCode(res, 401, 'Not an approved account or out of quota.') // unauthorized
           }
