@@ -8,19 +8,19 @@ exports.handleOptions = res => {
     res.setHeader("Content-Type", 0);
     res.writeHead(204); // no content
     res.end();
-}
+};
 
 exports.endWithCode = (res, code, err) => {
-    res.setHeader("access-control-allow-origin", "*")
+    res.setHeader("access-control-allow-origin", "*");
     if (err != null) {
-        res.setHeader('Content-Type', 'application/json')
-        res.writeHead(code)
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(code);
         res.end(JSON.stringify({ 
             success: false,
             error: String(err)
         }))
     } else {
-        res.writeHead(code)
+        res.writeHead(code);
         res.end()
     }
-}
+};

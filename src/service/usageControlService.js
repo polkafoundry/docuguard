@@ -64,15 +64,10 @@ module.exports = {
 
   getUserUsage: async function(user) {
     console.debug("getUserUsage", user);
-    var query = "SELECT SUM(`size`) as `usage` FROM `ipfs_proxy_usage_record` WHERE `address` = ? AND `status` = 0";
+    var query = "SELECT `app`, SUM(`size`) as `usage` FROM `ipfs_proxy_usage_record` WHERE `address` = ? AND `status` = 0 GROUP BY `app`";
     return sequelize.query(query, {
       replacements: [user],
       type: Sequelize.QueryTypes.SELECT
-    }).then(result => {
-      for (const item of result) {
-        return item.usage;
-      }
-      return 0;
     });
   },
 
