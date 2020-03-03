@@ -7,7 +7,9 @@ const http = require("http"),
   MemoryStream = require('memorystream'),
   { handleOptions, endWithCode } = require('./util')
 
-const EXPIRED_DURATION = +process.env.EXPIRE
+const usageControlService = require('./service/usageControlService');
+
+const EXPIRED_DURATION = +process.env.EXPIRE;
 
 const handleAddFiles =
   async (req, res) => {
@@ -16,10 +18,10 @@ const handleAddFiles =
     } else if (req.method !== 'POST' || !req.url.startsWith('/api/v0/add')) {
       return endWithCode(400)
     } else {
-      const length = Number(req.headers["content-length"])
+      const length = Number(req.headers["content-length"]);
       if (!length) {
         // it is an invalid request
-        return endWithCode(res, 400, 'Body content is empty.') // bad request
+        return endWithCode(res, 400, 'Body content is empty.'); // bad request
       }
 
       const memStream = new MemoryStream(undefined, { maxbufsize: length });
@@ -40,14 +42,14 @@ const handleAddFiles =
           buf = Buffer.alloc(length);
           startIndex = 0;
         });
-        part.on('error', console.error)
+        part.on('error', console.error);
         part.on('aborted', console.error)
       };
 
       form.parse(req, async err => {
         if (err) {
-          console.error(err)
-          return endWithCode(res, 400, 'Error parsing form data.') // bad request
+          console.error(err);
+          return endWithCode(res, 400, 'Error parsing form data.'); // bad request
         }
 
         const authData = req.headers.authorization.slice(7); // get authData from 'Bearer {authData}'
@@ -60,17 +62,17 @@ const handleAddFiles =
 
         // then, check signature
         const promises = formData.reduce((hashes, buf) => {
-          hashes.push(Hash.of(buf))
+          hashes.push(Hash.of(buf));
           return hashes
-        }, [])
-        const fileHashes = await Promise.all(promises)
-        const reqData = { app, fileHashes, from, time }
+        }, []);
+        const fileHashes = await Promise.all(promises);
+        const reqData = { app, fileHashes, from, time };
 
         const hash32bytes = ecc.stableHashObject(reqData, null);
         const validSignature = ecc.verify(hash32bytes, sign, pubkey);
         if (!validSignature) {
-          console.log('Invalid signature for ' + from, reqData, hash32bytes, pubkey)
-          return endWithCode(res, 400, 'Invalid signature.') // bad request
+          console.log('Invalid signature for ' + from, reqData, hash32bytes, pubkey);
+          return endWithCode(res, 400, 'Invalid signature.'); // bad request
         }
 
         // finally, check if user is approved
@@ -78,11 +80,18 @@ const handleAddFiles =
         try {
           const isApprovedUser = await isAuthorized(app, from, tokenAddress);
           if (!isApprovedUser) {
-            return endWithCode(res, 401, 'Not an approved account or out of quota.') // unauthorized
+            return endWithCode(res, 401, 'Not an approved account or out of quota.'); // unauthorized
           }
         } catch (e) {
-          console.error(e)
+          console.error(e);
           return endWithCode(res, 500, 'Error checking permission.')
+        }
+
+        //check is over usage limitation
+        const isOverUsageLimitation = await usageControlService.isOverUsageLimitation(from, app, length);
+
+        if (isOverUsageLimitation) {
+          return endWithCode(res, 422, 'Over app limitation.'); // over usage limitation
         }
 
         // everything seems fine, let's proxy the request to IPFS server
@@ -107,17 +116,19 @@ const handleAddFiles =
           }
         );
 
+        await usageControlService.updateUsage(from, app, fileHashes, length);
+
         // write orgininal body to proxyReq
         memStream.pipe(proxyReq, { end: true });
 
       });
     }
-  }
+  };
 
 const httpServer = http.createServer();
 httpServer.on("request", (req, res) => {
   handleAddFiles(req, res).catch(e => {
-    console.error(e)
+    console.error(e);
     endWithCode(res, 500)
   })
 });
