@@ -7,14 +7,17 @@
   "scripts": {
     "proxy": "node src/index.js",
     "ipfs": "node fake-ipfs/index.js",
-    "start": "node src/index.js & node fake-ipfs/index.js"
+    "start": "node src/index.js & node fake-ipfs/index.js",
+    "admin": "node src/usageControlAdminTool.js"
   },
   "dependencies": {
     "@iceteachain/web3": "^0.1.16",
     "dotenv": "^8.2.0",
     "formidable": "^1.2.1",
     "ipfs-only-hash": "^1.0.2",
-    "memorystream": "^0.3.1"
+    "memorystream": "^0.3.1",
+    "mysql2": "^2.1.0",
+    "sequelize": "^5.21.5"
   },
   "bin": {
     "ipfsfake": "fake-ipfs/index.js",
