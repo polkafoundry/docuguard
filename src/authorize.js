@@ -6,7 +6,7 @@ const usageControlService = require('./service/usageControlService');
 module.exports = {
   isAuthorized: async function(appContract, mainAddress, tokenAddress, dataSize) {
     return usageControlService
-      .getCurrentAppUsage(appContract)
+      .getAppUsage(appContract)
       .then(result => {
         //if app contract not exists -> hasn't approved, return false
         if (result == null) {

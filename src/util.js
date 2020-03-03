@@ -24,3 +24,10 @@ exports.endWithCode = (res, code, err) => {
         res.end()
     }
 };
+
+exports.success = (res, content) => {
+    res.setHeader("access-control-allow-origin", "*");
+    res.setHeader('Content-Type', 'application/json');
+    res.writeHead(200);
+    res.end(JSON.stringify(content))
+};

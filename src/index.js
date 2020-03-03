@@ -5,7 +5,7 @@ const http = require("http"),
   {isAuthorized} = require("./authorize"),
   formidable = require("formidable"),
   MemoryStream = require('memorystream'),
-  {handleOptions, endWithCode} = require('./util');
+  {handleOptions, endWithCode, success} = require('./util');
 const url = require('url');
 
 const usageControlService = require('./service/usageControlService');
@@ -116,6 +116,7 @@ const authenticationFilter =
     const {app, from, pubkey, sign, time} = JSON.parse(authData);
 
     // first, check if require is not expired
+    console.log(Date.now(),time, (Date.now() - time), EXPIRED_DURATION);
     if (Date.now() - time > EXPIRED_DURATION) {
       return endWithCode(res, 401, 'The request is no longer valid.')
     }
@@ -144,25 +145,25 @@ const handleCurrentAppUsage =
           return endWithCode(res, 401, 'Not an approved account or out of quota.');
         }
 
-        return endWithCode(res, 200, result);
+        return success(res, result);
       });
   };
 
 const handleUserAppUsage =
   async(req, res, transferData) => {
     return usageControlService
-      .getUserAppUsage(transferData.authData.app)
+      .getUserAppUsage(transferData.authData.from, transferData.authData.app)
       .then(result => {
-        return endWithCode(res, 200, {usage: result});
+        return success(res, {usage: result});
       });
   };
 
 const handleUserUsage =
   async(req, res, transferData) => {
     return usageControlService
-      .getUserAppUsage(transferData.authData.app)
+      .getUserUsage(transferData.authData.from)
       .then(result => {
-        return endWithCode(res, 200, result);
+        return success(res, result);
       });
   };
 
