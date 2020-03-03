@@ -138,7 +138,7 @@ const authenticationFilter =
 const handleCurrentAppUsage =
   async(req, res, transferData) => {
     return usageControlService
-      .getCurrentAppUsage(transferData.authData.app)
+      .getAppUsage(transferData.authData.app)
       .then(result => {
         if (result == null) {
           return endWithCode(res, 401, 'Not an approved account or out of quota.');

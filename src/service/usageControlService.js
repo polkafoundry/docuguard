@@ -26,7 +26,7 @@ module.exports = {
   isOverUsageLimitation: async function(user, app, dataSize) {
     console.debug("isOverUsageLimitation", user, app, dataSize);
     var query = "SELECT * FROM `ipfs_proxy_app_usage` WHERE `app` = ?";
-    return this.getCurrentAppUsage(app).then(item => {
+    return this.getAppUsage(app).then(item => {
       if (item == null) {
         return true;
       }
@@ -34,7 +34,7 @@ module.exports = {
     });
   },
 
-  getCurrentAppUsage: async function(app) {
+  getAppUsage: async function(app) {
     console.debug("getCurrentAppUsage", app);
     var query = "SELECT * FROM `ipfs_proxy_app_usage` WHERE `app` = ?";
     return sequelize.query(query, {
@@ -75,10 +75,14 @@ module.exports = {
     console.debug("updateAppUsageLimitation", app, newValue);
     var query = "INSERT INTO `ipfs_proxy_app_usage` (`app`, `usage`, `limitation`) VALUES (?, 0, ?) ON DUPLICATE KEY UPDATE `limitation` = ?";
     return sequelize.query(query, {
-      replacements: [app, newValue],
-      type: Sequelize.QueryTypes.SELECT
+      replacements: [app, newValue, newValue],
+      type: Sequelize.QueryTypes.UPDATE
     }).then(() => {
-      return this.getCurrentAppUsage(app);
+      return this.getAppUsage(app);
     });
   },
+
+  closeConnection: async function() {
+    sequelize.close();
+  }
 };

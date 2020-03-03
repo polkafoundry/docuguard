@@ -7,7 +7,8 @@
   "scripts": {
     "proxy": "node src/index.js",
     "ipfs": "node fake-ipfs/index.js",
-    "start": "node src/index.js & node fake-ipfs/index.js"
+    "start": "node src/index.js & node fake-ipfs/index.js",
+    "admin": "node src/usageControlAdminTool.js"
   },
   "dependencies": {
     "@iceteachain/web3": "^0.1.16",
