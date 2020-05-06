@@ -5,8 +5,8 @@
   "author": "TradaTech <https://trada.tech>",
   "license": "MIT",
   "scripts": {
-    "proxy": "node src/index.js",
-    "ipfs": "node fake-ipfs/index.js",
+    "docuguard": "node src/index.js",
+    "fake": "node fake-ipfs/index.js",
     "start": "node src/index.js & node fake-ipfs/index.js"
   },
   "dependencies": {
@@ -18,7 +18,7 @@
   },
   "bin": {
     "ipfsfake": "fake-ipfs/index.js",
-    "ipfsproxy": "src/index.js",
+    "docuguard": "src/index.js",
     "ipfslocal": "bin/index.js"
   }
 }

@@ -54,8 +54,13 @@ const handleAddFiles =
         const { app, from, pubkey, sign, time } = JSON.parse(authData);
 
         // first, check if require is not expired
-        if (Date.now() - time > EXPIRED_DURATION) {
-          return endWithCode(res, 401, 'The request is no longer valid.')
+        if (typeof time !== 'number' || time <= 0 || isNaN(time) || !Number.isInteger(time)) {
+          return endWithCode(res, 400, 'Invalid timestamp.')
+        }
+
+        const diff = Math.abs(Date.now() - time)
+        if (!time ||  diff > EXPIRED_DURATION) {
+          return endWithCode(res, 401, 'Request expired.')
         }
 
         // then, check signature
