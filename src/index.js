@@ -1,5 +1,6 @@
 require("dotenv").config();
 const {ecc} = require("@iceteachain/common");
+var logger = require('./log/logger');
 const Hash = require("ipfs-only-hash");
 const http = require("http"),
   {isAuthorized} = require("./authorize"),
@@ -61,7 +62,7 @@ const handleAddFiles =
         const hash32bytes = ecc.stableHashObject(reqData, null);
         const validSignature = ecc.verify(hash32bytes, sign, pubkey);
         if (!validSignature) {
-          console.log('Invalid signature for ' + from, reqData, hash32bytes, pubkey);
+          logger.error('Invalid signature for ' + from, reqData, hash32bytes, pubkey);
           return endWithCode(res, 400, 'Invalid signature.'); // bad request
         }
 
@@ -116,7 +117,7 @@ const authenticationFilter =
     const {app, from, pubkey, sign, time} = JSON.parse(authData);
 
     // first, check if require is not expired
-    console.log(Date.now(),time, (Date.now() - time), EXPIRED_DURATION);
+    logger.info(Date.now(),time, (Date.now() - time), EXPIRED_DURATION);
     if (Date.now() - time > EXPIRED_DURATION) {
       return endWithCode(res, 401, 'The request is no longer valid.')
     }
@@ -129,7 +130,7 @@ const authenticationFilter =
         return endWithCode(res, 401, 'Not an approved account or out of quota.');
       }
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       return endWithCode(res, 500, 'Error checking permission.')
     }
     transferDataObject.authData = JSON.parse(authData);
@@ -205,7 +206,7 @@ httpServer.on("request", (req, res) => {
       var filter = route.filter;
       filter(req, res, route.processor, transferDataObject)
         .catch(e => {
-          console.error(e);
+          logger.error(e);
           endWithCode(res, 500)
         });
       return;
@@ -215,5 +216,5 @@ httpServer.on("request", (req, res) => {
 });
 
 httpServer.listen(process.env.PORT, () => {
-  console.log("IPFS Proxy is listening on port " + process.env.PORT);
+  logger.info("IPFS Proxy is listening on port " + process.env.PORT);
 });

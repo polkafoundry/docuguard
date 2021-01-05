@@ -1,0 +1,7 @@
+{
+    "logConfig": {
+        "logFolder": "./out/logs/",
+        "logFile": "ipfs-%DATE%.log",
+        "logLevel": 0
+    }
+}

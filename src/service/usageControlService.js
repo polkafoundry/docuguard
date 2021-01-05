@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const logger = require('../log/logger');
 
 const sequelize = new Sequelize(process.env.DATABASE_DB, process.env.DATABASE_USERNAME, process.env.DATABASE_PASSWORD, {
   host: process.env.DATABASE_HOST,
@@ -7,7 +8,7 @@ const sequelize = new Sequelize(process.env.DATABASE_DB, process.env.DATABASE_US
 
 module.exports = {
   updateUsage: async function(user, app, hash, dataSize) {
-    console.debug("updateUsage",user, app, hash, dataSize);
+    logger.info("updateUsage",user, app, hash, dataSize);
     var insertQuery = "INSERT INTO `ipfs_proxy_usage_record` (`address`, `app`, `hash`, `size`, `status`) VALUES (?, ?, ?, ?, ?)";
     return sequelize.query(insertQuery, {
       replacements: [user, app, hash, dataSize, 0],
@@ -24,7 +25,7 @@ module.exports = {
   },
 
   isOverUsageLimitation: async function(user, app, dataSize) {
-    console.debug("isOverUsageLimitation", user, app, dataSize);
+    logger.info("isOverUsageLimitation", user, app, dataSize);
     var query = "SELECT * FROM `ipfs_proxy_app_usage` WHERE `app` = ?";
     return this.getAppUsage(app).then(item => {
       if (item == null) {
@@ -35,7 +36,7 @@ module.exports = {
   },
 
   getAppUsage: async function(app) {
-    console.debug("getCurrentAppUsage", app);
+    logger.info("getCurrentAppUsage", app);
     var query = "SELECT * FROM `ipfs_proxy_app_usage` WHERE `app` = ?";
     return sequelize.query(query, {
       replacements: [app],
@@ -49,7 +50,7 @@ module.exports = {
   },
 
   getUserAppUsage: async function(user, app) {
-    console.debug("getUserAppUsage", user, app);
+    logger.info("getUserAppUsage", user, app);
     var query = "SELECT SUM(`size`) as `usage` FROM `ipfs_proxy_usage_record` WHERE `address` = ? AND `app` = ? AND `status` = 0";
     return sequelize.query(query, {
       replacements: [user, app],
@@ -63,7 +64,7 @@ module.exports = {
   },
 
   getUserUsage: async function(user) {
-    console.debug("getUserUsage", user);
+    logger.info("getUserUsage", user);
     var query = "SELECT `app`, SUM(`size`) as `usage` FROM `ipfs_proxy_usage_record` WHERE `address` = ? AND `status` = 0 GROUP BY `app`";
     return sequelize.query(query, {
       replacements: [user],
@@ -72,7 +73,7 @@ module.exports = {
   },
 
   updateAppUsageLimitation: async function(app, newValue) {
-    console.debug("updateAppUsageLimitation", app, newValue);
+    logger.info("updateAppUsageLimitation", app, newValue);
     var query = "INSERT INTO `ipfs_proxy_app_usage` (`app`, `usage`, `limitation`) VALUES (?, 0, ?) ON DUPLICATE KEY UPDATE `limitation` = ?";
     return sequelize.query(query, {
       replacements: [app, newValue, newValue],
