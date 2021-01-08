@@ -12,7 +12,7 @@ module.exports = {
     var insertQuery = "INSERT INTO `ipfs_proxy_usage_record` (`address`, `app`, `hash`, `size`, `status`) VALUES (?, ?, ?, ?, ?)";
     return sequelize.query(insertQuery, {
       replacements: [user, app, hash, dataSize, 0],
-      type: Sequelize.QueryTypes.UPDATE
+      type: Sequelize.QueryTypes.INSERT
     }).then(() => {
       //auto insert into table if app not exists, or update usage if exists
       var updateAppUsage = "UPDATE `ipfs_proxy_app_usage` SET `usage` = `usage` + ? WHERE `app` = ?";

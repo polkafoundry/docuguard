@@ -10,3 +10,4 @@ node_modules/
 
 fake-ipfs/files/Qm*
 fake-ipfs/files/upload*
+.vscode/

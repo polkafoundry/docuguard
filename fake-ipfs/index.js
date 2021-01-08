@@ -7,6 +7,7 @@ const Hash = require("ipfs-only-hash")
 const formidable = require("formidable")
 const fs = require('fs')
 const { endWithCode } = require('../src/util')
+const logger = require('../src/log/logger')
 
 const tempHttpServer = http.createServer()
 tempHttpServer.on("request", async (req, res) => {
@@ -14,6 +15,7 @@ tempHttpServer.on("request", async (req, res) => {
     // console.log('IPFS server got a new request', req.method, req.url)
 
     if (req.method === 'GET') {
+        logger.info("Received GET request");
         // get the hash
         const hash = req.url.split('/').pop()
         if (!hash.startsWith('Qm')) {
@@ -34,7 +36,7 @@ tempHttpServer.on("request", async (req, res) => {
         })
 
     } else {
-
+        logger.info("Receive POST request");
         // extract the form
         const form = new formidable.IncomingForm()
         form.uploadDir = __dirname + '/files/'
@@ -86,4 +88,4 @@ tempHttpServer.on("request", async (req, res) => {
 })
 
 tempHttpServer.listen(5001)
-console.log('Fake IPFS server is listening at port 5001')
+logger.info("Fake IPFS server is listening at port 5001");
