@@ -1,32 +1,28 @@
 const Sequelize = require('sequelize');
+const dbConfig = require('../../config/db.config');
 const logger = require('../log/logger');
-
-const sequelize = new Sequelize(process.env.DATABASE_DB, process.env.DATABASE_USERNAME, process.env.DATABASE_PASSWORD, {
-  host: process.env.DATABASE_HOST,
-  dialect: "mysql",
-});
+const db = require('../sequelize-ipfs');
 
 module.exports = {
   updateUsage: async function(user, app, hash, dataSize) {
     logger.info("updateUsage",user, app, hash, dataSize);
-    var insertQuery = "INSERT INTO `ipfs_proxy_usage_record` (`address`, `app`, `hash`, `size`, `status`) VALUES (?, ?, ?, ?, ?)";
-    return sequelize.query(insertQuery, {
+    var insertQuery = "INSERT INTO `ipfs_proxy_usage_records` (`address`, `app`, `hash`, `size`, `status`) VALUES (?, ?, ?, ?, ?)";
+    return db.sequelize.query(insertQuery, {
       replacements: [user, app, hash, dataSize, 0],
       type: Sequelize.QueryTypes.INSERT
     }).then(() => {
       //auto insert into table if app not exists, or update usage if exists
-      var updateAppUsage = "UPDATE `ipfs_proxy_app_usage` SET `usage` = `usage` + ? WHERE `app` = ?";
-      return sequelize.query(updateAppUsage, {
+      var updateAppUsage = "UPDATE `ipfs_proxy_app_usages` SET `usage` = `usage` + ? WHERE `app` = ?";
+      return db.sequelize.query(updateAppUsage, {
         replacements: [dataSize, app],
         type: Sequelize.QueryTypes.UPDATE
       })
     });
-
   },
 
   isOverUsageLimitation: async function(user, app, dataSize) {
     logger.info("isOverUsageLimitation", user, app, dataSize);
-    var query = "SELECT * FROM `ipfs_proxy_app_usage` WHERE `app` = ?";
+    var query = "SELECT * FROM `ipfs_proxy_app_usages` WHERE `app` = ?";
     return this.getAppUsage(app).then(item => {
       if (item == null) {
         return true;
@@ -37,8 +33,8 @@ module.exports = {
 
   getAppUsage: async function(app) {
     logger.info("getCurrentAppUsage", app);
-    var query = "SELECT * FROM `ipfs_proxy_app_usage` WHERE `app` = ?";
-    return sequelize.query(query, {
+    var query = "SELECT * FROM `ipfs_proxy_app_usages` WHERE `app` = ?";
+    return db.sequelize.query(query, {
       replacements: [app],
       type: Sequelize.QueryTypes.SELECT
     }).then(result => {
@@ -51,8 +47,8 @@ module.exports = {
 
   getUserAppUsage: async function(user, app) {
     logger.info("getUserAppUsage", user, app);
-    var query = "SELECT SUM(`size`) as `usage` FROM `ipfs_proxy_usage_record` WHERE `address` = ? AND `app` = ? AND `status` = 0";
-    return sequelize.query(query, {
+    var query = "SELECT SUM(`size`) as `usage` FROM `ipfs_proxy_usage_records` WHERE `address` = ? AND `app` = ? AND `status` = 0";
+    return db.sequelize.query(query, {
       replacements: [user, app],
       type: Sequelize.QueryTypes.SELECT
     }).then(result => {
@@ -65,8 +61,8 @@ module.exports = {
 
   getUserUsage: async function(user) {
     logger.info("getUserUsage", user);
-    var query = "SELECT `app`, SUM(`size`) as `usage` FROM `ipfs_proxy_usage_record` WHERE `address` = ? AND `status` = 0 GROUP BY `app`";
-    return sequelize.query(query, {
+    var query = "SELECT `app`, SUM(`size`) as `usage` FROM `ipfs_proxy_usage_records` WHERE `address` = ? AND `status` = 0 GROUP BY `app`";
+    return db.sequelize.query(query, {
       replacements: [user],
       type: Sequelize.QueryTypes.SELECT
     });
@@ -74,8 +70,8 @@ module.exports = {
 
   updateAppUsageLimitation: async function(app, newValue) {
     logger.info("updateAppUsageLimitation", app, newValue);
-    var query = "INSERT INTO `ipfs_proxy_app_usage` (`app`, `usage`, `limitation`) VALUES (?, 0, ?) ON DUPLICATE KEY UPDATE `limitation` = ?";
-    return sequelize.query(query, {
+    var query = "INSERT INTO `ipfs_proxy_app_usages` (`app`, `usage`, `limitation`) VALUES (?, 0, ?) ON DUPLICATE KEY UPDATE `limitation` = ?";
+    return db.sequelize.query(query, {
       replacements: [app, newValue, newValue],
       type: Sequelize.QueryTypes.UPDATE
     }).then(() => {
@@ -84,6 +80,6 @@ module.exports = {
   },
 
   closeConnection: async function() {
-    sequelize.close();
+    db.close();
   }
 };

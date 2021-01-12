@@ -3,5 +3,14 @@
         "logFolder": "./out/logs/",
         "logFile": "ipfs-%DATE%.log",
         "logLevel": 0
+    },
+    "test": {
+        "authorization": {
+            "app": "contract.lovelockdev",
+            "from": "teat060x3h0e29e5zfw3npe5x05ngfa9f7wznc67v7g",
+            "pubkey": "heacwzfMH1BmY3YpCoDxcCb8R5QYS6chPj1dPfGPhLL6",
+            "sign": "fYx2xfVjcE7Yn3AMUVHwY4:APA91bHfXG7CN-SAzDMwWB1tvI-HT9sGMzkaHucVdO9NyJH0YkieSSwyWHTKXH-3yxys1hlMg1r_L1hCu2fYGDAC7RP5NqaJRH1m9RmRDhQfTDfL3uJd1flrbA0LwHhznjOgu6YP4GZg",
+            "time": 1610423274290
+        }
     }
 }

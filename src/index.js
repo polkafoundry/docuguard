@@ -11,6 +11,8 @@ const http = require("http"),
 const url = require('url');
 
 const usageControlService = require('./service/usageControlService');
+const db = require("./sequelize-ipfs");
+db.sequelize.sync({force: false});
 
 const EXPIRED_DURATION = +process.env.EXPIRE;
 
@@ -24,8 +26,6 @@ const handleAddFiles =
       // it is an invalid request
       return endWithCode(res, 400, 'Body content is empty.'); // bad request
     }
-
-    logger.info("transferDataObject.authData: " + transferDataObject.authData);
 
     const memStream = new MemoryStream(undefined, { maxbufsize: length });
     req.pipe(memStream);
@@ -69,7 +69,6 @@ const handleAddFiles =
 
       const hash32bytes = ecc.stableHashObject(reqData, null);
 
-      logger.info("hash32bytes: " + hash32bytes);
       // const validSignature = ecc.verify(hash32bytes, sign, pubkey);
       // if (!validSignature) {
       //   logger.error('Invalid signature for ' + from, reqData, hash32bytes, pubkey);
@@ -94,9 +93,7 @@ const handleAddFiles =
           // clone headers
           Object.keys(ipfsRes.headers).forEach(key => {
             const value = ipfsRes.headers[key];
-            res.setHeader(key, value);
-            logger.info("===key: " + key);
-            logger.info("value: " + value);
+            res.setHeader(key, value);;
           });
 
           // clone status code
@@ -137,7 +134,6 @@ const authenticationFilter =
     const { app, from, pubkey, sign, time } = JSON.parse(authData);
 
     // first, check if require is not expired
-    logger.info(Date.now(), time, (Date.now() - time), EXPIRED_DURATION);
     if (Date.now() - time > EXPIRED_DURATION) {
       return endWithCode(res, 401, 'The request is no longer valid.')
     }
@@ -189,13 +185,6 @@ const handleUserUsage =
       });
   };
 
-const handleTest = 
-  async (req, res, transferData) => {
-    logger.info("Call handle sample test");
-    return success(res, "Call sample test successful");
-  }
-
-
 const routeMap = [];
 routeMap.push({
   "path": "/api/v0/usage/currentAppUsage",
@@ -220,12 +209,6 @@ routeMap.push({
   "method": "POST",
   "filter": authenticationFilter,
   "processor": handleAddFiles
-});
-routeMap.push({
-  "path": "/api/v0/test",
-  "method": "GET",
-  "filter": authenticationFilter,
-  "processor": handleTest
 });
 
 const httpServer = http.createServer();
