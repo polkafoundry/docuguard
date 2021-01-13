@@ -1,85 +1,113 @@
+const t = require('@iceteachain/common/src/ecc');
 const Sequelize = require('sequelize');
 const dbConfig = require('../../config/db.config');
 const logger = require('../log/logger');
 const db = require('../sequelize-ipfs');
 
 module.exports = {
-  updateUsage: async function(user, app, hash, dataSize) {
-    logger.info("updateUsage",user, app, hash, dataSize);
-    var insertQuery = "INSERT INTO `ipfs_proxy_usage_records` (`address`, `app`, `hash`, `size`, `status`) VALUES (?, ?, ?, ?, ?)";
-    return db.sequelize.query(insertQuery, {
-      replacements: [user, app, hash, dataSize, 0],
-      type: Sequelize.QueryTypes.INSERT
-    }).then(() => {
-      //auto insert into table if app not exists, or update usage if exists
-      var updateAppUsage = "UPDATE `ipfs_proxy_app_usages` SET `usage` = `usage` + ? WHERE `app` = ?";
-      return db.sequelize.query(updateAppUsage, {
-        replacements: [dataSize, app],
-        type: Sequelize.QueryTypes.UPDATE
-      })
-    });
-  },
+    updateUsage: async function (user, app, hash, dataSize) {
+        logger.info("updateUsage", user, app, hash, dataSize);
+        const t = await db.sequelize.transaction();
+        try {
+            await db.UserAppUsage.create({
+                address: user,
+                app: app,
+                hash: JSON.stringify(hash),
+                size: dataSize,
+                status: 0
+            }, { transaction: t });
 
-  isOverUsageLimitation: async function(user, app, dataSize) {
-    logger.info("isOverUsageLimitation", user, app, dataSize);
-    var query = "SELECT * FROM `ipfs_proxy_app_usages` WHERE `app` = ?";
-    return this.getAppUsage(app).then(item => {
-      if (item == null) {
+            await db.UserUsage.increment(
+                {
+                    usage: +dataSize
+                },
+                {
+                    where: {
+                        app: app
+                    }
+                }, { transaction: t });
+            await t.commit();
+        } catch (error) {
+
+            logger.error("Error transaction update usage: " + error);
+            await t.rollback();
+        }
+    },
+
+    isOverUsageLimitation: async function (user, app, dataSize) {
+        logger.info("isOverUsageLimitation", user, app, dataSize);
+        const record = await db.UserUsage.findOne({
+            where: {
+                app: app
+            }
+        });
+        if (record) {
+            return (record.usage + dataSize) > record.limitation;
+        }
         return true;
-      }
-      return (item.usage + dataSize) >= item.limitation;
-    });
-  },
+    },
 
-  getAppUsage: async function(app) {
-    logger.info("getCurrentAppUsage", app);
-    var query = "SELECT * FROM `ipfs_proxy_app_usages` WHERE `app` = ?";
-    return db.sequelize.query(query, {
-      replacements: [app],
-      type: Sequelize.QueryTypes.SELECT
-    }).then(result => {
-      for (const item of result) {
-        return item;
-      }
-      return null;
-    });
-  },
+    getAppUsage: async function (app) {
+        logger.info("getCurrentAppUsage", app);
+        const record = await db.UserUsage.findOne({
+            where: {
+                app: app
+            }
+        });
+        return record;
+    },
 
-  getUserAppUsage: async function(user, app) {
-    logger.info("getUserAppUsage", user, app);
-    var query = "SELECT SUM(`size`) as `usage` FROM `ipfs_proxy_usage_records` WHERE `address` = ? AND `app` = ? AND `status` = 0";
-    return db.sequelize.query(query, {
-      replacements: [user, app],
-      type: Sequelize.QueryTypes.SELECT
-    }).then(result => {
-      for (const item of result) {
-        return item.usage;
-      }
-      return 0;
-    });
-  },
+    getUserAppUsage: async function (user, app) {
+        logger.info("getUserAppUsage", user, app);
+        const usage = await db.UserAppUsage.sum('size',
+            {
+                where: {
+                    address: user,
+                    status: 0
+                }
+            }
+        );
+        if (usage)
+            return usage;
+        return 0;
+    },
 
-  getUserUsage: async function(user) {
-    logger.info("getUserUsage", user);
-    var query = "SELECT `app`, SUM(`size`) as `usage` FROM `ipfs_proxy_usage_records` WHERE `address` = ? AND `status` = 0 GROUP BY `app`";
-    return db.sequelize.query(query, {
-      replacements: [user],
-      type: Sequelize.QueryTypes.SELECT
-    });
-  },
+    getUserUsage: async function (user) {
+        logger.info("getUserUsage", user);
+        const usage = await db.UserAppUsage.sum('size',
+            {
+                where: {
+                    address: user,
+                    status: 0
+                }
+            }
+        );
+        if (usage)
+            return usage;
+        return 0;
+    },
 
-  updateAppUsageLimitation: async function(app, newValue) {
-    logger.info("updateAppUsageLimitation", app, newValue);
-    var query = "INSERT INTO `ipfs_proxy_app_usages` (`app`, `usage`, `limitation`) VALUES (?, 0, ?) ON DUPLICATE KEY UPDATE `limitation` = ?";
-    return db.sequelize.query(query, {
-      replacements: [app, newValue, newValue],
-      type: Sequelize.QueryTypes.UPDATE
-    }).then(() => {
-      return this.getAppUsage(app);
-    });
-  },
+    updateQuotaAppUsage: async function (app, quota) {
+        logger.info("updateQuotaAppUsage: " + app + " quota: " + quota)
+        try {
+            const record = await db.UserUsage.upsert(
+                {
+                    app: app,
+                    limitation: quota
+                },
+                {
+                    where: {
+                        app: app
+                    }
+                }
+            );
+            return quota;
+        } catch (error) {
+            logger.error("Update quota app usage: " + error);
+        }
+    },
 
-  closeConnection: async function() {
-    db.close();
-  }
+    closeConnection: async function () {
+        db.close();
+    }
 };

@@ -28,6 +28,24 @@ describe('###########------------Call tests suit...----------##########', () => 
         done();
     });
 
+    // Test case: init or update quota for app
+    describe('/POST update quota app', () => {
+        it('it should POST update quota for app usage', (done) => {
+            chai.request(httpServer)
+                .post('/api/v0/usage/updateQuotaAppUsage')
+                .set('authorization', authorization)
+                .set('quota', 1000010)
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    const text = res.text;
+                    logger.info("res: " + JSON.stringify(res));
+                    // let temp = JSON.parse(res.text);
+                    // expect(temp.usage).gt(0);
+                    done();
+                })
+        });
+    });
+
     // Test case upload file
     describe('/POST upload file', () => {
         it('it should POST upload file', (done) => {
@@ -58,12 +76,14 @@ describe('###########------------Call tests suit...----------##########', () => 
                     res.should.have.status(200);
                     const text = res.text;
                     logger.info("res: " + JSON.stringify(res));
-                    res.text.should.be.a('string');
 
                     let temp = JSON.parse(res.text);
+                    temp.should.be.a('object');
+                    logger.info("temp: " + JSON.stringify(temp));
+                    logger.info("usage: " + temp.usage);
                     temp.usage.should.be.a('number');
-                    expect(temp.app).to.equal('contract.lovelockdev');
-                    expect(temp.usage).gt(0);
+                    expect(temp["app"]).to.equal('contract.lovelockdev');
+                    expect(temp["usage"]).gt(0);
                     done();
                 })
         });
@@ -74,6 +94,23 @@ describe('###########------------Call tests suit...----------##########', () => 
         it('it should GET user app usage', (done) => {
             chai.request(httpServer)
                 .get('/api/v0/usage/userAppUsage')
+                .set('authorization', authorization)
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    const text = res.text;
+                    logger.info("res: " + JSON.stringify(res));
+                    let temp = JSON.parse(res.text);
+                    expect(temp.usage).gt(0);
+                    done();
+                })
+        });
+    });
+
+    // Test case get user usage
+    describe('/GET user usage', () => {
+        it('it should GET user usage', (done) => {
+            chai.request(httpServer)
+                .get('/api/v0/usage/userUsage')
                 .set('authorization', authorization)
                 .end((err, res) => {
                     res.should.have.status(200);

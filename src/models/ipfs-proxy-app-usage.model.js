@@ -5,7 +5,8 @@ module.exports = (sequelize, Sequelize) => {
         primaryKey: true
       },
       usage: {
-        type: Sequelize.BIGINT
+        type: Sequelize.BIGINT,
+        defaultValue: 0
       },
       limitation: {
         type: Sequelize.BIGINT

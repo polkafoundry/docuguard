@@ -15,7 +15,7 @@ exports.endWithCode = (res, code, err) => {
     if (err != null) {
         res.setHeader('Content-Type', 'application/json');
         res.writeHead(code);
-        res.end(JSON.stringify({ 
+        res.end(JSON.stringify({
             success: false,
             error: String(err)
         }))

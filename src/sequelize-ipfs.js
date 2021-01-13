@@ -27,14 +27,11 @@ const connect = async () => {
   }
 };
 
-var UserUsage = UserUsageModel(sequelize, Sequelize);
-var UserAppUsage = UserAppUsageModel(sequelize, Sequelize);
-
-const db = {
-  models: {UserUsageModel, UserAppUsageModel}
-};
-
+const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+
+db.UserUsage = require("./models/ipfs-proxy-app-usage.model")(sequelize, Sequelize);
+db.UserAppUsage = require("./models/ipfs-proxy-usage-record.model")(sequelize, Sequelize);
 
 module.exports = db;
