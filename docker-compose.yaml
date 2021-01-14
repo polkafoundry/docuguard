@@ -1,0 +1,43 @@
+version: '3.3'
+services:
+    # define service mysql
+    db:
+      image: mysql:5.7
+      restart: always
+      environment:
+        MYSQL_DATABASE: 'icetea'
+        MYSQL_USER: 'icetea'
+        MYSQL_PASSWORD: 'abc@12345678'
+        MYSQL_ROOT_PASSWORD: 'abc@12345678'
+      ports:
+        - '3306:3306'
+      expose:
+        - '3306'
+      volumes:
+        - docuguard_db:/var/lib/mysql
+      networks:
+        - docuguard
+    # define service docuguard
+    docuguard-service:
+      depends_on:
+       - db
+      build: .
+      environment:
+        DB_HOST: 'db'
+        DB_PORT: 3306
+        DB_USER: 'icetea'
+        DB_PASSWORD: 'abc@12345678'
+        DB_NAME: 'icetea'
+      ports:
+        - "5050:5050"
+      networks:
+        - docuguard
+      command: npm test
+# Names our volume
+volumes:
+  docuguard_db:
+
+networks:
+  docuguard:
+    name: docuguard_network
+    driver: bridge

@@ -1,6 +1,5 @@
 const t = require('@iceteachain/common/src/ecc');
 const Sequelize = require('sequelize');
-const dbConfig = require('../../config/db.config');
 const logger = require('../log/logger');
 const db = require('../sequelize-ipfs');
 
