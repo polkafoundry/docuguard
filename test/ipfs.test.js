@@ -56,7 +56,7 @@ describe('###########------------Call tests suit...----------##########', () => 
                 .end((err, res) => {
                     res.should.have.status(200);
                     const text = res.text;
-                    logger.info("res: " + JSON.stringify(res));
+                    logger.info("res_upload: " + JSON.stringify(res));
                     let temp = JSON.parse(res.text);
                     // expect(temp.path).not.null();
                     // expect(temp.hash).not.null();

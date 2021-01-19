@@ -10,36 +10,56 @@ services:
         MYSQL_PASSWORD: 'abc@12345678'
         MYSQL_ROOT_PASSWORD: 'abc@12345678'
       ports:
-        - '4406:3306'
+        - "4406:3306"
       expose:
-        - '4406'
+        - "4406"
       volumes:
         - docuguard_db:/var/lib/mysql
+      networks:
+        - docuguard
+
+    # Define service IPFS Node
+    ipfs:
+      image: ipfs/go-ipfs:latest
+      ports:
+        - "4001:4001"
+        - "8080:8080"
+        - "5001:5001"
+      expose:
+        - "4001"
+        - "8080"
+        - "5001"
+      volumes:
+        - C:\Users\ASUS\ipfs_staging:/export
+        - C:\Users\ASUS\ipfs_data:/data/ipfs
       networks:
         - docuguard
     # Define service docuguard
     service:
       image: docuguard-service
       depends_on:
-       - db
+        - db
+        - ipfs
       build: .
       # Run only ubuntu test environment. 
       # On windows should comment this extra_hosts
-      extra_hosts:
-        - "host.docker.internal:172.17.0.1"
+      # extra_hosts:
+      #   - "host.docker.internal:172.17.0.1"
       environment:
         DB_HOST: 'db'
         DB_PORT: 3306
         DB_USER: 'icetea'
         DB_PASSWORD: 'abc@12345678'
         DB_NAME: 'icetea'
-        IPFS_HOST: 'http://host.docker.internal:5001'
+        IPFS_HOST: 'http://ipfs:5001'
       ports:
         - "5050:5050"
+      expose:
+        - "5050"
       networks:
         - docuguard
 
-      command: npm test
+      command: npm test -- --grep "upload"
 # Names our volume
 volumes:
   docuguard_db:
