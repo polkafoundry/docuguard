@@ -1,6 +1,6 @@
 version: '3.3'
 services:
-    # define service mysql
+    # Define service mysql
     db:
       image: mysql:5.7
       restart: always
@@ -17,22 +17,28 @@ services:
         - docuguard_db:/var/lib/mysql
       networks:
         - docuguard
-    # define service docuguard
+    # Define service docuguard
     service:
       image: docuguard-service
       depends_on:
        - db
       build: .
+      # Run only ubuntu test environment. 
+      # On windows should comment this extra_hosts
+      extra_hosts:
+        - "host.docker.internal:172.17.0.1"
       environment:
         DB_HOST: 'db'
         DB_PORT: 3306
         DB_USER: 'icetea'
         DB_PASSWORD: 'abc@12345678'
         DB_NAME: 'icetea'
+        IPFS_HOST: 'http://host.docker.internal:5001'
       ports:
         - "5050:5050"
       networks:
         - docuguard
+
       command: npm test
 # Names our volume
 volumes:
