@@ -77,11 +77,10 @@ const handleAddFiles =
             // }
 
             //check is over usage limitation
-            // const isOverUsageLimitation = await usageControlService.isOverUsageLimitation(from, app, length);
-
-            // if (isOverUsageLimitation) {
-            //     return endWithCode(res, 422, 'Your application has exceeded the space limit.'); // over usage limitation
-            // }
+            const isOverUsageLimitation = await usageControlService.isOverUsageLimitation(from, app, length);
+            if (isOverUsageLimitation) {
+                return endWithCode(res, 422, 'Your application has exceeded the space limit.'); // over usage limitation
+            }
 
             // everything seems fine, let's proxy the request to IPFS server
             const proxyReq = http.request(
@@ -111,7 +110,7 @@ const handleAddFiles =
             logger.info("fileSize: " + fileSize);
 
             // update usage
-            // await usageControlService.updateUsage(from, app, fileHashes, fileSize);
+            await usageControlService.updateUsage(from, app, fileHashes, fileSize);
             // await Promise.all(formData.forEach(function(buf, index) {
             //   var hash = fileHashes[index];
             //   logger.info("hash: " + hash);
@@ -245,7 +244,6 @@ httpServer.on("request", (req, res) => {
             return;
         }
     }
-    endWithCode(400);
 });
 
 httpServer.listen(process.env.PORT, () => {
