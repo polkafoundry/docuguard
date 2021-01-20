@@ -14,7 +14,7 @@ services:
       expose:
         - "4406"
       volumes:
-        - /var/docuguard_db:/var/lib/mysql
+        - docuguard_db:/var/lib/mysql
       networks:
         - docuguard
 
@@ -63,6 +63,10 @@ services:
         - "5050"
       networks:
         - docuguard
+# Names our volume
+volumes:
+  docuguard_db:
+
 networks:
   docuguard:
     name: docuguard_network
