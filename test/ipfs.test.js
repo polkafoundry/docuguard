@@ -60,7 +60,7 @@ describe('###########------------Call tests suit...----------##########', () => 
                     let temp = JSON.parse(res.text);
                     // expect(temp.path).not.null();
                     // expect(temp.hash).not.null();
-                    expect(temp.size).eq(31);
+                    expect(temp.Size).eq('41');
                     done();
                 })
         });
