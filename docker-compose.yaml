@@ -14,7 +14,7 @@ services:
       expose:
         - "4406"
       volumes:
-        - docuguard_db:/var/lib/mysql
+        - /var/docuguard_db:/var/lib/mysql
       networks:
         - docuguard
 
@@ -35,7 +35,7 @@ services:
         # - C:\Users\ASUS\ipfs_data:/data/ipfs
         # Path on Linux
         - /var/ipfs_storage/export:/export
-        - /var/ipfs_storage/ipfs:/ipfs
+        - /var/ipfs_storage/ipfs:/data/ipfs
       networks:
         - docuguard
     # Define service docuguard
@@ -63,10 +63,6 @@ services:
         - "5050"
       networks:
         - docuguard
-# Names our volume
-volumes:
-  docuguard_db:
-
 networks:
   docuguard:
     name: docuguard_network
