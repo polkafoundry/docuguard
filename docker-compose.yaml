@@ -34,8 +34,8 @@ services:
         # - C:\Users\ASUS\ipfs_staging:/export
         # - C:\Users\ASUS\ipfs_data:/data/ipfs
         # Path on Linux
-        - /var/ipfs_staging:/var/ipfs_storage/export
-        - /var/ipfs_data:/var/ipfs_storage/ipfs
+        - /var/ipfs_storage/export:/export
+        - /var/ipfs_storage/ipfs:/ipfs
       networks:
         - docuguard
     # Define service docuguard
