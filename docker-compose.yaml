@@ -16,33 +16,33 @@ services:
       volumes:
         - docuguard_db:/var/lib/mysql
       networks:
-        - docuguard
+        - docuguard_network
 
     # Define service IPFS Node
-    ipfs:
-      image: ipfs/go-ipfs:latest
-      ports:
-        - "4001:4001"
-        - "8080:8080"
-        - "127.0.0.1:5001:5001"
-      expose:
-        - "4001"
-        - "8080"
-        - "5001"
-      volumes:
-        # Path examples on Windows
-        # - C:\Users\ASUS\ipfs_staging:/export
-        # - C:\Users\ASUS\ipfs_data:/data/ipfs
-        # Path on Linux
-        - /var/ipfs_storage/export:/export
-        - /var/ipfs_storage/ipfs:/data/ipfs
-      networks:
-        - docuguard
+    # ipfs:
+    #   image: ipfs/go-ipfs:latest
+    #   ports:
+    #     - "4001:4001"
+    #     - "8080:8080"
+    #     - "127.0.0.1:5001:5001"
+    #   expose:
+    #     - "4001"
+    #     - "8080"
+    #     - "5001"
+    #   volumes:
+    #     # Path examples on Windows
+    #     # - C:\Users\ASUS\ipfs_staging:/export
+    #     # - C:\Users\ASUS\ipfs_data:/data/ipfs
+    #     # Path on Linux
+    #     - /var/ipfs_storage/export:/export
+    #     - /var/ipfs_storage/ipfs:/data/ipfs
+      # networks:
+      #   - docuguard
     # Define service docuguard
     service:
       image: docuguard-service
       depends_on:
-        - "ipfs"
+        # - "ipfs0"
         - "db"
       build: .
       # Run only Ubuntu test environment. 
@@ -55,19 +55,23 @@ services:
         DB_USER: 'icetea'
         DB_PASSWORD: 'abc@12345678'
         DB_NAME: 'icetea'
-        IPFS_HOST: 'http://ipfs:5001'
-        WAIT_HOSTS: db:3306, ipfs:5001
+        IPFS_HOST: 'http://ipfs0:5001'
+        WAIT_HOSTS: db:3306, ipfs0:5001
       ports:
         - "5050:5050"
       expose:
         - "5050"
       networks:
-        - docuguard
+        - docuguard_network
+
 # Names our volume
 volumes:
   docuguard_db:
 
+# networks:
+#   docuguard:
+#     name: docuguard_network
+#     driver: bridge
 networks:
-  docuguard:
-    name: docuguard_network
-    driver: bridge
+  docuguard_network:
+    external: true
