@@ -61,12 +61,15 @@ services:
         - "5050:5050"
       expose:
         - "5050"
+      volumes: 
+        - docuguard_logs:/usr/src/app/out/logs
       networks:
         - docuguard_network
 
 # Names our volume
 volumes:
   docuguard_db:
+  docuguard_logs:
 
 # networks:
 #   docuguard:

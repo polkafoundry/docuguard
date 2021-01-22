@@ -1,7 +1,7 @@
 {
     "logConfig": {
         "logFolder": "./out/logs/",
-        "logFile": "ipfs-%DATE%.log",
+        "logFile": "docuguard-%DATE%.log",
         "logLevel": 0
     },
     "test": {

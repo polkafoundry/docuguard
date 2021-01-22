@@ -109,8 +109,7 @@ const handleAddFiles =
                 logger.error("Error call ipfs0: " + err.code + " " + err.message);
                 return endWithCode(res, 503, 'IPFS Services unavaiable.');
             });
-
-            logger.info("formData: " + formData);
+            
             logger.info("fileHashes: " + fileHashes);
             logger.info("fileSize: " + fileSize);
 
