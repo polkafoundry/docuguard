@@ -55,8 +55,8 @@ services:
         DB_USER: 'icetea'
         DB_PASSWORD: 'abc@12345678'
         DB_NAME: 'icetea'
-        IPFS_HOST: 'http://ipfs0:5001'
-        WAIT_HOSTS: db:3306, ipfs0:5001
+        IPFS_HOST: 'http://forum.icetea.io:5001'
+        WAIT_HOSTS: db:3306
       ports:
         - "5050:5050"
       expose:
