@@ -194,7 +194,7 @@ const handUpdateQuotaAppUsage =
         return usageControlService
             .updateQuotaAppUsage(transferData.authData.app, req.headers.quota)
             .then(result => {
-                return success(res, { usage: result });
+                return success(res, { quota: result });
             });
     }
 
@@ -232,6 +232,12 @@ routeMap.push({
 
 const httpServer = http.createServer();
 httpServer.on("request", (req, res) => {
+    // Set CORS headers
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Access-Control-Request-Method', '*');
+	res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    
     if (req.method === "OPTIONS") {
         return handleOptions(res)
     }
